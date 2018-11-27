@@ -40,4 +40,7 @@ sa <- sa[[subvars]]
 names(sa) <- c("AnnTemp","MaxTemp",  "MinTemp","TempSpan",
                "MeanTWet","AnnPrecip", "DryPrecip","ColdPrecip")
 
-save(sa, file = "SA_climate.Rdata")
+save(sa, solanum, file = "SA_climate.Rdata")
+
+download.file(githubURL,"myfile")
+load("myfile")
