@@ -1,5 +1,5 @@
 ---
-title: "Intro to species distribution modelling"
+title: "Intro to Species Distribution Modelling (SDM)"
 author: "Petr Keil"
 date: "November 27, 2018"
 output: 
@@ -14,15 +14,32 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+--------------------------------------------------------------------------------
+ 
+Note: I have taken a lot of ideas and material from [this intro](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf) to ```dismo``` package by **Robert Hijmans** and **Jane Elith**.
+
 # Introduction
 
-This class is heavily based on [this intro](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf) to ```dismo``` package by Robert Hijmans and Jane Elith.
+- Species Distribution Modelling (a.k.a. Niche Modelling) aims to predict **where   species live** from a limited set of observation.
+- Sometimes it aims to estimate species' **niches** from its distribution.  
+- It's a **huge** field, massively used in applied ecology and conservation.
+- It's a young field (last 20 years), and it is full of **problems and challenges**.
 
+## Goals
 
-Brown-throated sloth (*Bradypus variegatus*)
+- to show an **example use of SDM**, and to demonstrate the challenges it faces
+- to show R's great ability to work with **spatial data**
+- to demonstrate the concepts of **spatial predictors** and **crossvalidation**
+
+## **Brown-throated sloth** (*Bradypus variegatus*)
+
+This will be our example species -- data on its distribution will come from R
+package ```dismo```, where they are provided as an illustration.
+
 
 ![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Bradypus.jpg/800px-Bradypus.jpg)
 
+--------------------------------------------------------------------------------
 
 # Loading the data and packages
 
@@ -37,6 +54,8 @@ library(sp) # package for vector layers
 library(rgeos)
 library(raster) # package for raster layers
 ```
+
+If you don't have any of these, just type ```install.packages("name of the package")```.
 
 ## Data
 
@@ -65,7 +84,7 @@ plot(wrld_simpl, add=TRUE, border="darkgrey")
 
 ### Environmental predictors
 
-They come from WorldClim 1.4 and WWF.
+They come from **WorldClim 1.4** and **WWF**. See the ```dismo``` documentation for details.
 
 ```{r}
 files <- list.files(path=paste(system.file(package="dismo"), '/ex', sep=''), 
@@ -83,12 +102,28 @@ Let's plot the predictors
 plot(predictors)
 ```
 
+
+
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/SlothDWA.jpg/800px-SlothDWA.jpg)
+
+Photo by Sergiodelgado, CC-BY-SA, Wikimedia Commons
+
+--------------------------------------------------------------------------------
+
 # Prepare the data for modelling
 
-## Mask for the pseudo-absence data
+This is a critical step! Some major decisions here, particularly, should we do:
+
+- Presence-only modelling (e.g. **MaxEnt**)
+- Presence-pseudo absence modelling
+- Presence-absence modelling (e.g. **GLM**)
+
+## Mask for the **pseudo-absence** data
+
+Note: We can later play with the diameter parameter.
 
 ```{r}
-x <- circles(brad.pts, d=400000, lonlat=TRUE) # 400 km diameter
+x <- circles(brad.pts, d=400000, lonlat=TRUE) # 400 km diameter (200 km radius)
 pol <- polygons(x)
 
 mask <- predictors[[1]]
@@ -137,7 +172,9 @@ plot(lat ~ lon, data = sdmdata, col = as.factor(pres))
 plot(wrld_simpl, add=TRUE, border="darkgrey")
 ```
 
-## Training and testing datasets for crossvalidation
+## Training and testing datasets for **crossvalidation**
+
+Crossvalidation is the best defense against overfitting!
 
 ```{r}
 test.id <- sort(sample(x = 1:nrow(sdmdata), size = 100))
@@ -154,11 +191,16 @@ train.data <- sdmdata[train.id,]
 Photo by Christian Mehlführer, CC-BY license, Wikimedia Commons
 
 
+--------------------------------------------------------------------------------
+
 
 # Fitting a Generalized Linear Model
 
 
 ## Logistic binomial regression
+
+In the code below, feel free to use anything of your current knowledge
+to modify it or imporve it!
 
 ```{r}
 m.null <- glm(pres ~ 1, data=train.data, family = "binomial")
@@ -175,7 +217,9 @@ m.env <-  glm(pres ~ MeanP + DryP + MaxT + MinT + WetT,
 
 ## Logistic binomial regression with spatial component
 
-For this we will use function `gam` from package `mgcv`:
+A **spatial component** accounts for the fact that species are often missing from some places even if they have suitable environmental conditions, and the other way round. 
+
+We will model the spatial component using a **smooth 2D spline surface**. For this we will use function `gam` from package `mgcv`:
 
 ```{r}
 m.space <- gam(pres ~ s(lat, lon, bs="sos", k = 33), 
@@ -188,10 +232,6 @@ m.env.space <-  gam(pres ~ MeanP + DryP + MaxT +
 
 
 
-![](https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/SlothDWA.jpg/800px-SlothDWA.jpg)
-
-Photo by Sergiodelgado, CC-BY-SA, Wikimedia Commons
-
 # Model evaluation and maps of predictions
 
 ## Comparison of AIC and BIC
@@ -201,7 +241,9 @@ AIC(m.null, m.full, m.env, m.env.space, m.space)
 BIC(m.null, m.full, m.env, m.env.space, m.space)
 ```
 
-## Comparison with test data
+Note: We get conflicting results from AIC and BIC!
+
+## Comparison with test data (crossvalidation)
 
 ```{r}
 m.env.prd <- predict(m.env, newdata = test.data, type = "response")
@@ -214,11 +256,14 @@ par(mfrow=c(1,3))
 roc(x = test.data$pres, p = m.env.prd)
 roc(x = test.data$pres, p = m.space.prd)
 roc(x = test.data$pres, p = m.env.space.prd)
-
 ```
 
+Ok, so crossvalidation tells us that the third model (with both space and 
+environment) is the best. Let's put it on the map then!
 
-### Mapping the predictions
+## Mapping the predictions
+
+Prepare a dataset from the entire raster stack:
 
 ```{r}
 all.data <- as.data.frame(predictors)
@@ -228,6 +273,9 @@ all.data <- data.frame(all.data,
 all.data$biome <- as.factor(all.data$biome)
 ```
 
+Make the predictions using our favourite model, and the entire raster data, and
+push this to a raster:
+
 ```{r}
 m.env.prd <- predict(m.env.space, newdata = all.data, 
                      type = "response", na.action = na.pass)
@@ -236,9 +284,16 @@ pred.raster <- predictors[[1]]
 pred.raster[] <- as.vector(m.env.prd )
 ```
 
+## This is where sloths live:
+
 ```{r, fig.height = 10, fig.width = 10}
 plot(brad.pts)
 plot(pred.raster, add=TRUE)
 plot(brad.pts, add=TRUE)
 plot(wrld_simpl, add=TRUE, border="darkgrey")
 ```
+
+--------------------------------------------------------------------------------
+
+# Concluding remarks
+
