@@ -14,7 +14,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction
 
-Parts of this class are loosely based on [this intro](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf) to ```dismo``` package by Robert Hijmans and Jane Elith.
+This class is heavily based on [this intro](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf) to ```dismo``` package by Robert Hijmans and Jane Elith.
+
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Bradypus.jpg/800px-Bradypus.jpg)
 
 
 # Loading the data and packages
@@ -27,48 +29,117 @@ library(rgeos)
 library(raster) # package for raster layers
 
 
-list.files(path=paste(system.file(package="dismo")), '/ex', sep='')), pattern='grd', full.names=TRUE )
+file <- paste(system.file(package="dismo"), "/ex/bradypus.csv", sep="")
+bradypus <- read.table(file,  header=TRUE,  sep=',')
 
 
+files <- list.files(path=paste(system.file(package="dismo"), '/ex', sep=''), 
+                    pattern='grd', 
+                    full.names=TRUE)
 
+predictors <- stack(files)
+names(predictors) <- c("MeanT","MeanP","WetP","DryP","MaxT","MinT","TRange","WetT", "biome")
 ```
 
 
-All data that you will need for this exercise can be found here.
 
 The environmental data are from WorldClim:
-```getData('bioclim', res=0.5, lon=5, lat=45)```
 
-```{r}
-load("data/Solanum.Rdata") # load the main data
-objects() # examine what we've loaded
-```
+
 
 Let's convert the lat-long point data to ```spatialPoints``` class
 
 ```{r}
-Solanum <- SpatialPoints(coords = solanum, proj4string = CRS(proj4string(sa)))
+brad.pts <- SpatialPoints(coords = bradypus[, c('lon', 'lat')], 
+                          proj4string = CRS(proj4string(predictors)))
 
 ```
 
 
 ## Plot the data
 ```{r}
-plot(Solanum)
-plot(wrld_simpl, add=TRUE)
+plot(brad.pts)
+plot(wrld_simpl, add=TRUE, border="darkgrey")
 ```
 
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/MC_Drei-Finger-Faultier.jpg/1920px-MC_Drei-Finger-Faultier.jpg)
 
-# Absences, pseudo-absences, background
+Photo by Christian Mehlführer, CC-BY license, Wikimedia Commons
+
+# Preparing the data
+
+Mask for the pseudo-absence data
 
 ```{r}
-Sol.circ <- circles(Solanum, d = 50000, lonlat = TRUE)
-Sol.poly <- polygons(Sol.circ)
-pseudo.abs <- spsample(Sol.poly, n = 250, type="random", iter=25)
+x <- circles(brad.pts, d=400000, lonlat=TRUE) # 200 km radius
+pol <- polygons(x)
+
+mask <- predictors[[1]]
+v <- extract(mask, x@polygons, cellnumbers=T)
+v <- do.call(rbind, v)
+v <- unique(v[,1])
+m <- mask
+m[] <- NA
+m[v] <- 1
+m <- m
+m[is.na(mask)] <- NA
+
+plot(m)
+plot(wrld_simpl, add=TRUE, border="darkgrey")
 
 ```
 
 
-# Simple presence-only model
+```{r}
+# presence data
+set.seed(0)
+pres.coords <- bradypus[, c('lon', 'lat')]
+pres.pred <- extract(predictors, brad.pts)
+pres <- rep(1, nrow(pres.pred))
+pres.data <- data.frame(pres, pres.pred, pres.coords)
+pres.data$biome <- as.factor(pres.data$biome)
 
-# Presence-absence model
+# background data
+abs.coords <- randomPoints(mask = m, n = 300, p = pres.coords)
+colnames(abs.coords) <- c("lon", "lat")
+abs.pred <- extract(predictors, abs.coords)
+pres <- rep(0, nrow(abs.coords))
+abs.data <- data.frame(pres, abs.pred, abs.coords)
+abs.data$biome <- as.factor(abs.data$biome)
+
+# all data
+sdmdata <- rbind(pres.data, abs.data)
+```
+
+
+```{r}
+summary(sdmdata)
+
+plot(lat ~ lon, data = sdmdata, col = as.factor(pb))
+plot(wrld_simpl, add=TRUE, border="darkgrey")
+```
+
+# Fitting a presence-absence model
+
+
+Logistic regression
+```{r}
+m1 <- glm(pb ~ MeanT + MaxT + MeanP, data=sdmdata, family = "binomial")
+summary(m1)
+```
+
+# Fitting a presence-only model
+
+
+
+
+
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/SlothDWA.jpg/800px-SlothDWA.jpg)
+
+Photo by Sergiodelgado, CC-BY-SA, Wikimedia Commons
+
+```{r}
+# brad.circ <- circles(bradypus, d = 100000, lonlat = TRUE)
+# brad.poly <- polygons(brad.circ)
+# pseudo.abs <- spsample(brad.poly, n = 250, type="random", iter=25)
+```
