@@ -295,5 +295,5 @@ plot(wrld_simpl, add=TRUE, border="darkgrey")
 
 --------------------------------------------------------------------------------
 
-# Concluding remarks
+# Concluding remarks & ideas
 
