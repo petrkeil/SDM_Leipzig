@@ -42,5 +42,5 @@ names(sa) <- c("AnnTemp","MaxTemp",  "MinTemp","TempSpan",
 
 save(sa, solanum, file = "SA_climate.Rdata")
 
-download.file(githubURL,"myfile")
-load("myfile")
+
+load("data/Solanum.Rdata")
