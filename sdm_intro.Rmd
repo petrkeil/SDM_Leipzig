@@ -18,6 +18,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 This class is heavily based on [this intro](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf) to ```dismo``` package by Robert Hijmans and Jane Elith.
 
+
+Brown-throated sloth (*Bradypus variegatus*)
+
 ![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Bradypus.jpg/800px-Bradypus.jpg)
 
 
@@ -37,7 +40,7 @@ library(raster) # package for raster layers
 
 ## Data
 
-### Bradypus observations
+### *Bradypus variegatus* observations
 
 ```{r}
 file <- paste(system.file(package="dismo"), "/ex/bradypus.csv", sep="")
@@ -76,11 +79,9 @@ names(predictors) <- c("MeanT","MeanP","WetP","DryP","MaxT",
 
 Let's plot the predictors
 
-```{r, fig.width = 8}
+```{r, fig.width = 8, fig.height = 7}
 plot(predictors)
 ```
-
-
 
 # Prepare the data for modelling
 
@@ -129,22 +130,14 @@ abs.data$biome <- as.factor(abs.data$biome)
 sdmdata <- rbind(pres.data, abs.data)
 ```
 
-```{r}
-summary(sdmdata)
-```
-
 Examine the resulting data points
 
 ```{r, fig.height = 7}
-summary(sdmdata)
-
 plot(lat ~ lon, data = sdmdata, col = as.factor(pres))
 plot(wrld_simpl, add=TRUE, border="darkgrey")
 ```
 
-
 ## Training and testing datasets for crossvalidation
-
 
 ```{r}
 test.id <- sort(sample(x = 1:nrow(sdmdata), size = 100))
@@ -182,6 +175,8 @@ m.env <-  glm(pres ~ MeanP + DryP + MaxT + MinT + WetT,
 
 ## Logistic binomial regression with spatial component
 
+For this we will use function `gam` from package `mgcv`:
+
 ```{r}
 m.space <- gam(pres ~ s(lat, lon, bs="sos", k = 33), 
                     data=train.data, family = "binomial")
@@ -199,14 +194,14 @@ Photo by Sergiodelgado, CC-BY-SA, Wikimedia Commons
 
 # Model evaluation and maps of predictions
 
-### Comparison of AIC and BIC
+## Comparison of AIC and BIC
 
 ```{r}
 AIC(m.null, m.full, m.env, m.env.space, m.space)
 BIC(m.null, m.full, m.env, m.env.space, m.space)
 ```
 
-### Comparison with test data
+## Comparison with test data
 
 ```{r}
 m.env.prd <- predict(m.env, newdata = test.data, type = "response")
