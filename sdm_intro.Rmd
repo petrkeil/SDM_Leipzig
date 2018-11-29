@@ -16,7 +16,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 --------------------------------------------------------------------------------
  
-Note: I have taken a lot of ideas and material from [this intro](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf) to ```dismo``` package by **Robert Hijmans** and **Jane Elith**.
+- I have taken a lot of ideas and material from [this intro](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf) to ```dismo``` package by **Robert Hijmans** and **Jane Elith**.
+- For the entire **raw code** used here see [this GitHub repository](https://github.com/petrkeil/SDM_Leipzig).
+
 
 # Introduction
 
