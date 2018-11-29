@@ -120,6 +120,9 @@ This is a critical step! Some major decisions here, particularly, should we do:
 - Presence-pseudo absence modelling
 - Presence-absence modelling (e.g. **GLM**)
 
+For a nice overview of the different modelling approaches see [this tutorial](https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf).
+
+
 ## Mask for the **pseudo-absence** data
 
 Note: We can later play with the diameter parameter.
@@ -297,5 +300,11 @@ plot(wrld_simpl, add=TRUE, border="darkgrey")
 
 --------------------------------------------------------------------------------
 
-# Concluding remarks & ideas
+# Concluding questions
+
+- How could one potentially solve the problem of unreliable pseudo-absences?
+- Could we easily re-run the analysis at a coarse easily?
+- Would extending the area for pseudo-absences impact the result?
+- How about making the spatial component more complex? Or simpler?
+
 
