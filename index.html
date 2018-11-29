@@ -182,7 +182,7 @@ $(document).ready(function () {
 <li><a href="#mapping-the-predictions"><span class="toc-section-number">5.3</span> Mapping the predictions</a></li>
 <li><a href="#this-is-where-sloths-live"><span class="toc-section-number">5.4</span> This is where sloths live:</a></li>
 </ul></li>
-<li><a href="#concluding-remarks-ideas"><span class="toc-section-number">6</span> Concluding remarks &amp; ideas</a></li>
+<li><a href="#concluding-questions"><span class="toc-section-number">6</span> Concluding questions</a></li>
 </ul>
 </div>
 
@@ -275,6 +275,7 @@ predictors &lt;-<span class="st"> </span><span class="kw">stack</span>(files)
 <li>Presence-pseudo absence modelling</li>
 <li>Presence-absence modelling (e.g. <strong>GLM</strong>)</li>
 </ul>
+<p>For a nice overview of the different modelling approaches see <a href="https://cran.r-project.org/web/packages/dismo/vignettes/sdm.pdf">this tutorial</a>.</p>
 <div id="mask-for-the-pseudo-absence-data" class="section level2">
 <h2><span class="header-section-number">3.1</span> Mask for the <strong>pseudo-absence</strong> data</h2>
 <p>Note: We can later play with the diameter parameter.</p>
@@ -420,8 +421,14 @@ pred.raster[] &lt;-<span class="st"> </span><span class="kw">as.vector</span>(m.
 <hr />
 </div>
 </div>
-<div id="concluding-remarks-ideas" class="section level1">
-<h1><span class="header-section-number">6</span> Concluding remarks &amp; ideas</h1>
+<div id="concluding-questions" class="section level1">
+<h1><span class="header-section-number">6</span> Concluding questions</h1>
+<ul>
+<li>How could one potentially solve the problem of unreliable pseudo-absences?</li>
+<li>Could we easily re-run the analysis at a coarse easily?</li>
+<li>Would extending the area for pseudo-absences impact the result?</li>
+<li>How about making the spatial component more complex? Or simpler?</li>
+</ul>
 </div>
 
 
